@@ -3,7 +3,7 @@ Main API router
 """
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, products, campaigns, content, workflows, analytics, webhooks
+from app.api.v1 import auth, users, products, campaigns, content, workflows, analytics, webhooks, websocket
 
 api_router = APIRouter()
 
@@ -16,3 +16,4 @@ api_router.include_router(content.router, prefix="/content", tags=["Content"])
 api_router.include_router(workflows.router, prefix="/workflows", tags=["Workflows"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
+api_router.include_router(websocket.router, tags=["WebSocket"])
