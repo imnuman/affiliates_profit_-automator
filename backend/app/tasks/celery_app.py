@@ -11,11 +11,9 @@ celery_app = Celery(
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
     include=[
-        "app.tasks.content",
-        "app.tasks.sync",
-        "app.tasks.publishing",
-        "app.tasks.analytics",
-        "app.tasks.scheduled"
+        "app.tasks.content_tasks",
+        "app.tasks.clickbank_tasks",
+        "app.tasks.publishing_tasks",
     ]
 )
 
@@ -33,33 +31,25 @@ celery_app.conf.update(
 
 # Scheduled tasks (Celery Beat)
 celery_app.conf.beat_schedule = {
-    "sync-clickbank-products-hourly": {
-        "task": "app.tasks.sync.sync_clickbank_products",
-        "schedule": crontab(minute=0),  # Every hour
+    "sync-clickbank-products-daily": {
+        "task": "app.tasks.clickbank_tasks.sync_clickbank_products",
+        "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM
     },
-    "sync-user-sales-hourly": {
-        "task": "app.tasks.sync.sync_user_sales",
-        "schedule": crontab(minute=15),  # Every hour at :15
+    "update-product-metrics-hourly": {
+        "task": "app.tasks.clickbank_tasks.update_product_metrics",
+        "schedule": crontab(minute=30),  # Every hour at :30
     },
-    "process-scheduled-content": {
-        "task": "app.tasks.publishing.process_scheduled_content",
+    "identify-trending-products-daily": {
+        "task": "app.tasks.clickbank_tasks.identify_trending_products",
+        "schedule": crontab(hour=6, minute=0),  # Daily at 6 AM
+    },
+    "publish-scheduled-content": {
+        "task": "app.tasks.publishing_tasks.publish_scheduled_content",
         "schedule": crontab(minute="*/15"),  # Every 15 minutes
     },
-    "send-scheduled-emails": {
-        "task": "app.tasks.publishing.send_scheduled_emails",
-        "schedule": crontab(minute="*/15"),  # Every 15 minutes
-    },
-    "generate-daily-insights": {
-        "task": "app.tasks.analytics.generate_daily_insights",
-        "schedule": crontab(hour=3, minute=0),  # Daily at 3 AM
-    },
-    "send-performance-summaries": {
-        "task": "app.tasks.scheduled.send_performance_summaries",
-        "schedule": crontab(hour=8, minute=0),  # Daily at 8 AM
-    },
-    "cleanup-old-cache": {
-        "task": "app.tasks.scheduled.cleanup_old_cache",
-        "schedule": crontab(hour=4, minute=0),  # Daily at 4 AM
+    "cleanup-stale-products-weekly": {
+        "task": "app.tasks.clickbank_tasks.cleanup_stale_products",
+        "schedule": crontab(hour=3, minute=0, day_of_week=0),  # Sunday at 3 AM
     },
 }
 

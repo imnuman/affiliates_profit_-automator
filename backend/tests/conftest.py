@@ -59,3 +59,38 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
         yield client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def test_user(db_session: AsyncSession):
+    """Create a test user"""
+    from app.models.user import User
+    from app.core.security import hash_password
+
+    user = User(
+        email="test@example.com",
+        password_hash=hash_password("TestPassword123!"),
+        full_name="Test User",
+        tier="starter",
+        status="active",
+        is_email_verified=True
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+async def auth_headers(client: AsyncClient, test_user) -> dict:
+    """Get authentication headers for test user"""
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "test@example.com",
+            "password": "TestPassword123!"
+        }
+    )
+    assert response.status_code == 200
+    data = response.json()
+    return {"Authorization": f"Bearer {data['access_token']}"}
